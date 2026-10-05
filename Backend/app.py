@@ -84,10 +84,20 @@ def generate_speech(text, voice_id, locale):
 
 def generate_description(place, answer_type, language):
     prompt = PROMPTS[answer_type].format(place=place, language=language)
-    response = client.models.generate_content(
-        model="gemini-3.8-flash", contents=prompt
-    )
-    return response.text
+
+    for attempt in range(3):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3.8-flash",
+                contents=prompt
+            )
+            return response.text
+        except Exception as e:
+            if "503" in str(e) and attempt < 2:
+                import time
+                time.sleep(3)
+            else:
+                raise e
 
 
 @app.route("/generate-audio-guide", methods=["POST"])
